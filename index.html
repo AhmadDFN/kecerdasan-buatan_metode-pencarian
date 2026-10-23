@@ -1,0 +1,338 @@
+﻿<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Simulasi Rute Pengiriman Paket</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <div class="label-atas">Simulasi pencarian rute</div>
+        <h1>Surabaya ke Banyuwangi</h1>
+        <p>
+          Bandingkan langkah BFS, DFS, UCS, Greedy Best-First Search, dan A*
+          pada jaringan jalan Jawa Timur.
+        </p>
+      </header>
+      <section class="kartu-jalan" aria-labelledby="judul-jaringan">
+        <div class="judul-jalan">
+          <div>
+            <div class="label-atas">Data simulasi</div>
+            <h2 id="judul-jaringan">Jaringan jalan dan jarak</h2>
+          </div>
+          <span class="jumlah-jalan">14 ruas jalan &middot; dua arah</span>
+        </div>
+        <div class="bungkus-tabel-jalan">
+          <table class="tabel-jalan">
+            <thead><tr><th>Kota asal</th><th>Kota tujuan</th><th>Jarak</th></tr></thead>
+            <tbody>
+              <tr><td>Surabaya</td><td>Mojokerto</td><td>55 km</td></tr>
+              <tr><td>Surabaya</td><td>Pasuruan</td><td>60 km</td></tr>
+              <tr><td>Mojokerto</td><td>Malang</td><td>80 km</td></tr>
+              <tr><td>Pasuruan</td><td>Malang</td><td>60 km</td></tr>
+              <tr><td>Pasuruan</td><td>Probolinggo</td><td>40 km</td></tr>
+              <tr><td>Probolinggo</td><td>Situbondo</td><td>100 km</td></tr>
+              <tr><td>Probolinggo</td><td>Lumajang</td><td>65 km</td></tr>
+              <tr><td>Malang</td><td>Lumajang</td><td>85 km</td></tr>
+              <tr><td>Malang</td><td>Blitar</td><td>70 km</td></tr>
+              <tr><td>Lumajang</td><td>Jember</td><td>55 km</td></tr>
+              <tr><td>Jember</td><td>Bondowoso</td><td>35 km</td></tr>
+              <tr><td>Jember</td><td>Banyuwangi</td><td>95 km</td></tr>
+              <tr><td>Bondowoso</td><td>Situbondo</td><td>40 km</td></tr>
+              <tr><td>Situbondo</td><td>Banyuwangi</td><td>120 km</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section class="pengaturan" aria-label="Pengaturan simulasi">
+        <label for="algoritma"
+          >Pilih algoritma
+          <select id="algoritma">
+            <option value="" selected disabled>
+              Pilih algoritma untuk memulai
+            </option>
+            <option value="nomor1">Nomor 1 &middot; Pemodelan dan ruang solusi</option>
+            <option value="nomor2">Nomor 2 &middot; Pemeriksaan heuristik</option>
+            <option value="bfs">Nomor 3 &middot; BFS</option>
+            <option value="dfs">Nomor 4 &middot; DFS</option>
+            <option value="ucs">Nomor 5 &middot; UCS</option>
+            <option value="greedy">Nomor 6 &middot; Greedy Best-First Search</option>
+            <option value="astar">Nomor 7 &middot; A* (heuristik standar)</option>
+            <option value="h0">Nomor 9a &middot; A* (semua h(n) = 0)</option>
+            <option value="lumajang">Nomor 9b &middot; A* (h Lumajang = 300)</option>
+            <option value="jember">Nomor 9c &middot; A* (h Jember = 0)</option>
+            <option value="nomor8">Nomor 8 &middot; Perbandingan algoritma</option>
+          </select>
+        </label>
+        <button id="jalankan">Jalankan simulasi</button>
+      </section>
+      <section class="hasil" id="hasil" aria-live="polite" hidden>
+        <div class="kartu-memuat" id="memuat" role="status" hidden>
+          <span class="pemutar" aria-hidden="true"></span>
+          <div>
+            <strong>Menjalankan Perintah Algoritma</strong>
+            <p>Menganalisis rute dan langkah pencarian...</p>
+          </div>
+        </div>
+        <div id="isi-hasil" hidden>
+          <div class="kepala-hasil">
+            <h2 id="judul">Hasil simulasi</h2>
+            <div class="ringkasan" id="ringkasan"></div>
+          </div>
+          <div id="analisis" class="analisis"></div>
+          <div class="bungkus-tabel" id="tabel-langkah">
+            <table>
+              <thead>
+                <tr>
+                  <th>Langkah</th>
+                  <th>Pop</th>
+                  <th>Frontier sesudah</th>
+                  <th>Explored sesudah</th>
+                </tr>
+              </thead>
+              <tbody id="langkah"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      <p class="catatan" id="catatan" hidden>
+        Jarak pada sisi jalan menggunakan kilometer. Frontier ditampilkan
+        setelah setiap kota diproses.
+      </p>
+    </main>
+    <script>
+      const edges = [
+        ["Surabaya", "Mojokerto", 55],
+        ["Surabaya", "Pasuruan", 60],
+        ["Mojokerto", "Malang", 80],
+        ["Pasuruan", "Malang", 60],
+        ["Pasuruan", "Probolinggo", 40],
+        ["Probolinggo", "Situbondo", 100],
+        ["Probolinggo", "Lumajang", 65],
+        ["Malang", "Lumajang", 85],
+        ["Malang", "Blitar", 70],
+        ["Lumajang", "Jember", 55],
+        ["Jember", "Bondowoso", 35],
+        ["Jember", "Banyuwangi", 95],
+        ["Bondowoso", "Situbondo", 40],
+        ["Situbondo", "Banyuwangi", 120],
+      ];
+      const hDefault = {
+        Surabaya: 210,
+        Mojokerto: 230,
+        Pasuruan: 175,
+        Malang: 195,
+        Probolinggo: 140,
+        Blitar: 245,
+        Lumajang: 130,
+        Situbondo: 70,
+        Bondowoso: 70,
+        Jember: 75,
+        Banyuwangi: 0,
+      };
+      const graph = {};
+      for (const [a, b, w] of edges) {
+        (graph[a] ||= []).push([b, w]);
+        (graph[b] ||= []).push([a, w]);
+      }
+      for (const city in graph)
+        graph[city].sort((a, b) => a[0].localeCompare(b[0], "id"));
+      const names = {
+        nomor1: "Nomor 1: Pemodelan dan ruang solusi",
+        nomor2: "Nomor 2: Pemeriksaan heuristik",
+        bfs: "Nomor 3: BFS (Breadth-First Search)",
+        dfs: "Nomor 4: DFS (Depth-First Search)",
+        ucs: "Nomor 5: UCS (Uniform Cost Search)",
+        greedy: "Nomor 6: Greedy Best-First Search",
+        astar: "Nomor 7: Algoritma A* (Heuristik Standar)",
+        h0: "Nomor 9a: Eksperimen A* dengan semua h(n) = 0",
+        lumajang: "Nomor 9b: Eksperimen A* dengan h(Lumajang) = 300",
+        jember: "Nomor 9c: Eksperimen A* dengan h(Jember) = 0",
+        nomor8: "Nomor 8: Perbandingan dan analisis",
+      };
+      function heuristik(mode) {
+        const h = { ...hDefault };
+        if (mode === "h0") for (const city in h) h[city] = 0;
+        if (mode === "lumajang") h.Lumajang = 300;
+        if (mode === "jember") h.Jember = 0;
+        return h;
+      }
+      function periksaHeuristik(mode) {
+        const h = heuristik(mode);
+        const jarakSebenarnya = { Banyuwangi: 0 };
+        const antrean = [{ city: "Banyuwangi", cost: 0 }];
+        while (antrean.length) {
+          antrean.sort((a, b) => a.cost - b.cost || a.city.localeCompare(b.city, "id"));
+          const { city, cost } = antrean.shift();
+          if (cost > jarakSebenarnya[city]) continue;
+          for (const [neighbor, weight] of graph[city]) {
+            const nextCost = cost + weight;
+            if (nextCost < (jarakSebenarnya[neighbor] ?? Infinity)) {
+              jarakSebenarnya[neighbor] = nextCost;
+              antrean.push({ city: neighbor, cost: nextCost });
+            }
+          }
+        }
+        const jalanPelanggar = edges.filter(([a, b, jarak]) => Math.abs(h[a] - h[b]) > jarak);
+        const kotaPelanggar = Object.keys(h).filter(city => h[city] > jarakSebenarnya[city]);
+        return { h, jarakSebenarnya, jalanPelanggar, kotaPelanggar };
+      }
+      function simulate(mode) {
+        const h = { ...hDefault };
+        if (mode === "h0") for (const c in h) h[c] = 0;
+        if (mode === "lumajang") h.Lumajang = 300;
+        if (mode === "jember") h.Jember = 0;
+        const informed = [
+          "greedy",
+          "astar",
+          "h0",
+          "lumajang",
+          "jember",
+        ].includes(mode);
+        const costed = ["ucs", "astar", "h0", "lumajang", "jember"].includes(
+          mode,
+        );
+        const frontier = [{ city: "Surabaya", g: 0, parent: null, updated: false }],
+          explored = [],
+          rows = [],
+          updates = [];
+        let goalNode = null;
+        const priority = (n) =>
+          mode === "greedy" ? h[n.city] : mode === "ucs" ? n.g : costed ? n.g + h[n.city] : 0;
+        while (frontier.length) {
+          frontier.sort(
+            (a, b) =>
+              priority(a) - priority(b) || a.city.localeCompare(b.city, "id"),
+          );
+          const curr = frontier.shift();
+          if (explored.includes(curr.city)) continue;
+          for (const item of frontier) item.updated = false;
+          explored.push(curr.city);
+          if (curr.city === "Banyuwangi") goalNode = curr;
+          else
+            for (const [city, w] of graph[curr.city]) {
+              if (explored.includes(city)) continue;
+              const next = { city, g: curr.g + w, parent: curr, updated: false };
+              const old = frontier.find((x) => x.city === city);
+              if (!old) frontier.push(next);
+              else if (costed && next.g < old.g) {
+                updates.push({ city, from: old.g, to: next.g, via: curr.city });
+                Object.assign(old, next);
+                old.updated = true;
+              }
+            }
+          const show = (n) => {
+            if (!informed && mode !== "ucs") return n.city;
+            const value = mode === "ucs" ? n.g : mode === "greedy" ? h[n.city] : `${n.g}+${h[n.city]}=${n.g + h[n.city]}`;
+            return `${n.city}(${value}${n.updated ? ", diperbarui" : ""})`;
+          };
+          rows.push({
+            pop: show(curr),
+            frontier: frontier.map(show),
+            explored: [...explored],
+          });
+          if (goalNode) break;
+        }
+        let path = [],
+          distance = 0;
+        if (goalNode) {
+          for (let n = goalNode; n; n = n.parent) path.unshift(n.city);
+          distance = goalNode.g;
+        }
+        return { rows, path, distance, expansions: explored.length, explored, updates };
+      }
+      function jalurDenganJarak(route) {
+        let distance = 0;
+        for (let i = 0; i < route.length - 1; i++) {
+          distance += graph[route[i]].find(([city]) => city === route[i + 1])[1];
+        }
+        return distance;
+      }
+      function tabelAnalisis(headers, rows) {
+        return `<div class="bungkus-tabel"><table><thead><tr>${headers.map(item => `<th>${item}</th>`).join("")}</tr></thead><tbody>${rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+      }
+      function render() {
+        const mode = document.querySelector("#algoritma").value,
+          result = simulate(mode);
+        document.querySelector("#judul").textContent = names[mode];
+        const ringkasan = document.querySelector("#ringkasan");
+        const analisis = document.querySelector("#analisis");
+        const tabelLangkah = document.querySelector("#tabel-langkah");
+        ringkasan.innerHTML = "";
+        analisis.innerHTML = "";
+        tabelLangkah.hidden = false;
+        if (mode === "nomor1") {
+          tabelLangkah.hidden = true;
+          const routes = {
+            A: ["Surabaya", "Pasuruan", "Probolinggo", "Situbondo", "Banyuwangi"],
+            B: ["Surabaya", "Pasuruan", "Probolinggo", "Lumajang", "Jember", "Banyuwangi"],
+            C: ["Surabaya", "Pasuruan", "Malang", "Lumajang", "Jember", "Banyuwangi"],
+            D: ["Surabaya", "Mojokerto", "Malang", "Lumajang", "Jember", "Banyuwangi"],
+          };
+          analisis.innerHTML = `<div class="penjelasan"><p><b>State:</b> kota yang sedang ditempati truk. <b>Awal:</b> Surabaya. <b>Aksi:</b> berpindah ke kota tetangga. <b>Biaya:</b> jumlah jarak. <b>Goal:</b> Banyuwangi.</p></div>${tabelAnalisis(["Jalur", "Rute", "Jumlah ruas", "Jarak"], Object.entries(routes).map(([name, route]) => [name, route.join(" → "), route.length - 1, `${jalurDenganJarak(route)} km`]))}`;
+          ringkasan.innerHTML = `<span class="label-ringkasan">Paling sedikit ruas: A (4)</span><span class="label-ringkasan">Jarak terpendek: B (315 km)</span>`;
+        } else if (mode === "nomor2" || ["h0", "lumajang", "jember"].includes(mode)) {
+          tabelLangkah.hidden = true;
+          const check = periksaHeuristik(mode === "nomor2" ? "astar" : mode);
+          const cities = mode === "nomor2" ? ["Jember", "Situbondo", "Lumajang"] : Object.keys(check.h);
+          analisis.innerHTML = `<div class="penjelasan">Admissible: <b>${check.kotaPelanggar.length ? "Tidak" : "Ya"}</b>. Consistent: <b>${check.jalanPelanggar.length ? "Tidak" : "Ya"}</b>.</div>${tabelAnalisis(["Kota", "h(n)", "h*(n)", "Admissible"], cities.map(city => [city, check.h[city], check.jarakSebenarnya[city], check.h[city] <= check.jarakSebenarnya[city] ? "Ya" : "Tidak"]))}${mode === "nomor2" ? tabelAnalisis(["Kota A", "Kota B", "Selisih h", "Jarak jalan", "Konsisten?"], edges.map(([a,b,w]) => [a,b,Math.abs(check.h[a]-check.h[b]),`${w} km`,Math.abs(check.h[a]-check.h[b]) <= w ? "Ya" : "Tidak"])) : ""}${check.jalanPelanggar.length ? `<div class="penjelasan"><b>Jalan yang melanggar consistency:</b> ${check.jalanPelanggar.map(([a,b,w]) => `${a}–${b} (selisih h ${Math.abs(check.h[a]-check.h[b])} &gt; ${w} km)`).join(", ")}</div>` : ""}`;
+          if (mode === "nomor2") {
+            ringkasan.innerHTML = `<span class="label-ringkasan">Jalan pelanggar: ${check.jalanPelanggar.length}</span><span class="label-ringkasan">Kota tidak admissible: ${check.kotaPelanggar.length}</span>`;
+          } else {
+            const out = simulate(mode);
+            ringkasan.innerHTML = `<span class="label-ringkasan">Jalur: ${out.path.join(" → ")}</span><span class="label-ringkasan">Jarak: ${out.distance} km</span><span class="label-ringkasan">Ekspansi: ${out.expansions}</span>`;
+          }
+        } else if (mode === "nomor8") {
+          tabelLangkah.hidden = true;
+          const algoritmas = [["BFS", "bfs"], ["DFS", "dfs"], ["UCS", "ucs"], ["Greedy", "greedy"], ["A*", "astar"]].map(([name, key]) => [name, simulate(key)]);
+          const optimal = algoritmas.find(([name]) => name === "UCS")[1].distance;
+          analisis.innerHTML = tabelAnalisis(["Algoritma", "Jalur", "Jarak", "Ekspansi", "Optimal?"], algoritmas.map(([name, out]) => [name, out.path.join(" → "), `${out.distance} km`, out.expansions, out.distance === optimal ? "Ya" : "Tidak"]));
+          ringkasan.innerHTML = `<span class="label-ringkasan">Rute terpendek: UCS dan A*</span><span class="label-ringkasan">Jarak optimal: ${optimal} km</span>`;
+          const ucsCities = new Set(simulate("ucs").explored), astarCities = new Set(simulate("astar").explored);
+          const notExpanded = [...ucsCities].filter(city => !astarCities.has(city));
+          analisis.innerHTML += `<div class="penjelasan"><p>Saya memilih A* untuk rute ini karena hasilnya mencapai jarak minimum.</p><p>A* memproses ${simulate("astar").expansions} kota, sedangkan UCS memproses ${simulate("ucs").expansions} kota.</p><p>Heuristik standar pada data ini konsisten dan tidak melebihi jarak sebenarnya ke tujuan.</p><p>Jika nilai heuristik belum tersedia atau belum diperiksa, UCS tetap menjadi pilihan aman untuk mencari jarak minimum.</p><p>Kota yang diperluas UCS tetapi tidak diperluas A*: ${notExpanded.join(", ") || "tidak ada"}.</p></div>`;
+        } else {
+          ringkasan.innerHTML = `<span class="label-ringkasan">Jalur: ${result.path.join(" → ") || "Tidak ditemukan"}</span><span class="label-ringkasan">Jarak: ${result.distance} km</span><span class="label-ringkasan">Ekspansi: ${result.expansions}</span>`;
+          if (mode === "ucs" && result.updates.length) {
+            analisis.innerHTML = `<div class="penjelasan"><b>Pembaruan biaya:</b> ${result.updates.map(item => `${item.city}: ${item.from} menjadi ${item.to} melalui ${item.via}`).join("; ")}</div>`;
+          }
+          if (mode === "astar") {
+            const ucsCities = new Set(simulate("ucs").explored);
+            const missed = [...ucsCities].filter(city => !result.explored.includes(city));
+            analisis.innerHTML = `<div class="penjelasan">Node yang diambil menampilkan g, h, dan f. Kota yang diperluas UCS tetapi tidak diperluas A*: ${missed.join(", ") || "tidak ada"}. Kota itu dilewati karena goal diambil lebih dulu; nilai f-nya lebih besar daripada nilai f goal.</div>`;
+          }
+          if (mode === "greedy") analisis.innerHTML = `<div class="penjelasan">Greedy hanya melihat h(n), bukan biaya yang sudah ditempuh. Karena itu, ia dapat memilih rute yang tampak dekat ke tujuan tetapi total jaraknya lebih panjang.</div>`;
+          if (mode === "bfs") analisis.innerHTML = `<div class="penjelasan">BFS menemukan jalur dengan jumlah ruas paling sedikit. Jalur ini belum tentu memiliki jarak total paling pendek; pada data ini jaraknya ${result.distance} km, sedangkan UCS menemukan ${simulate("ucs").distance} km.</div>`;
+          if (mode === "dfs") analisis.innerHTML = `<div class="penjelasan">DFS mengambil Mojokerto lebih dulu karena tetangga alfabet pertama diletakkan di atas stack. Jalur yang ditemukan: ${result.path.join(" → ")} (${result.distance} km).</div>`;
+        }
+        document.querySelector("#langkah").innerHTML = result.rows
+          .map(
+            (r, i) =>
+              `<tr><td>${i + 1}</td><td><code>${r.pop}</code></td><td><code>[${r.frontier.join(", ")}]</code></td><td><code>{${r.explored.join(", ")}}</code></td></tr>`,
+          )
+          .join("");
+      }
+      const runButton = document.querySelector("#jalankan");
+      function runWithLoading() {
+        if (!document.querySelector("#algoritma").value) return;
+        document.querySelector("#hasil").hidden = false;
+        document.querySelector("#catatan").hidden = false;
+        document.querySelector("#isi-hasil").hidden = true;
+        document.querySelector("#memuat").hidden = false;
+        runButton.disabled = true;
+        document.querySelector("#algoritma").disabled = true;
+        window.setTimeout(() => {
+          render();
+          document.querySelector("#memuat").hidden = true;
+          document.querySelector("#isi-hasil").hidden = false;
+          runButton.disabled = false;
+          document.querySelector("#algoritma").disabled = false;
+        }, 900);
+      }
+      runButton.addEventListener("click", runWithLoading);
+    </script>
+  </body>
+</html>
+
