@@ -68,81 +68,6 @@ def print_summary(path, dist, expansions):
     print(f"Jumlah ekspansi : {expansions}\n")
 
 
-def shortest_distances(goal):
-    distances = {goal: 0}
-    frontier = [(0, goal)]
-    while frontier:
-        frontier.sort()
-        cost, city = frontier.pop(0)
-        if cost > distances[city]:
-            continue
-        for neighbor, weight in graph[city]:
-            new_cost = cost + weight
-            if new_cost < distances.get(neighbor, float("inf")):
-                distances[neighbor] = new_cost
-                frontier.append((new_cost, neighbor))
-    return distances
-
-
-def check_heuristic(h_map):
-    actual = shortest_distances("Banyuwangi")
-    bad_edges = []
-    bad_cities = []
-    for city_a, city_b, distance in edges:
-        if abs(h_map[city_a] - h_map[city_b]) > distance:
-            bad_edges.append((city_a, city_b, distance))
-    for city, h_value in h_map.items():
-        if h_value > actual[city]:
-            bad_cities.append((city, h_value, actual[city]))
-    return actual, bad_edges, bad_cities
-
-
-def print_heuristic_check(title, h_map):
-    actual, bad_edges, bad_cities = check_heuristic(h_map)
-    print(f"\n{title}")
-    print("Pemeriksaan tiap jalan:")
-    for city_a, city_b, distance in edges:
-        difference = abs(h_map[city_a] - h_map[city_b])
-        print(f"  {city_a} - {city_b}: selisih h={difference}, jarak={distance}")
-    print(f"Admissible : {'Ya' if not bad_cities else 'Tidak'}")
-    print(f"Consistent : {'Ya' if not bad_edges else 'Tidak'}")
-    if bad_cities:
-        print("Kota yang melanggar admissible:")
-        for city, h_value, real_cost in bad_cities:
-            print(f"  {city}: h={h_value}, h*={real_cost}")
-    if bad_edges:
-        print("Jalan yang melanggar consistency:")
-        for city_a, city_b, distance in bad_edges:
-            difference = abs(h_map[city_a] - h_map[city_b])
-            print(f"  {city_a} - {city_b}: selisih h={difference}, jarak={distance}")
-    return actual
-
-
-def run_nomor_1():
-    print("\nNOMOR 1: PEMODELAN DAN RUANG SOLUSI")
-    print("State: kota yang sedang ditempati truk")
-    print("Initial state: Surabaya")
-    print("Aksi: berpindah ke kota tetangga melalui jalan yang tersedia")
-    print("Path cost: jumlah jarak jalan yang dilalui")
-    print("Goal test: kota saat ini adalah Banyuwangi")
-    routes = {
-        "A": ["Surabaya", "Pasuruan", "Probolinggo", "Situbondo", "Banyuwangi"],
-        "B": ["Surabaya", "Pasuruan", "Probolinggo", "Lumajang", "Jember", "Banyuwangi"],
-        "C": ["Surabaya", "Pasuruan", "Malang", "Lumajang", "Jember", "Banyuwangi"],
-        "D": ["Surabaya", "Mojokerto", "Malang", "Lumajang", "Jember", "Banyuwangi"],
-    }
-    for name, path in routes.items():
-        _, distance = reconstruct_path(dict(zip(path[1:], path[:-1])), path[0], path[-1])
-        print(f"Jalur {name}: {' -> '.join(path)} | {len(path)-1} ruas | {distance} km")
-    print("Ruas paling sedikit: Jalur A (4 ruas)")
-    print("Jarak paling pendek: Jalur B (315 km)")
-
-
-def run_nomor_2():
-    print("\nNOMOR 2: PEMERIKSAAN HEURISTIK")
-    actual = print_heuristic_check("Heuristik standar", default_h)
-    for city in ["Jember", "Situbondo", "Lumajang"]:
-        print(f"h*({city}) = {actual[city]} km; h({city}) = {default_h[city]} km")
 def run_bfs(start="Surabaya", goal="Banyuwangi"):
     print_header("NOMOR 3: BFS (Breadth-First Search)")
     frontier = [start]
@@ -171,7 +96,6 @@ def run_bfs(start="Surabaya", goal="Banyuwangi"):
 
     path, dist = reconstruct_path(parent, start, goal)
     print_summary(path, dist, expansions)
-    return path, dist, expansions, explored
 
 
 def run_dfs(start="Surabaya", goal="Banyuwangi"):
@@ -202,7 +126,6 @@ def run_dfs(start="Surabaya", goal="Banyuwangi"):
 
     path, dist = reconstruct_path(parent, start, goal)
     print_summary(path, dist, expansions)
-    return path, dist, expansions, explored
 
 
 def run_ucs(start="Surabaya", goal="Banyuwangi"):
@@ -211,7 +134,6 @@ def run_ucs(start="Surabaya", goal="Banyuwangi"):
     explored = []
     parent = {start: None}
     expansions = 0
-    updates = []
 
     print(f"{'-':<25} | {'[Surabaya(0)]':<42} | {{}}")
 
@@ -237,7 +159,6 @@ def run_ucs(start="Surabaya", goal="Banyuwangi"):
                 frontier[nb] = (new_g, False)
                 parent[nb] = curr
             elif nb in frontier and new_g < frontier[nb][0]:
-                updates.append((nb, frontier[nb][0], new_g, curr))
                 frontier[nb] = (new_g, True)
                 parent[nb] = curr
 
@@ -252,12 +173,6 @@ def run_ucs(start="Surabaya", goal="Banyuwangi"):
 
     path, dist = reconstruct_path(parent, start, goal)
     print_summary(path, dist, expansions)
-    print("Pembaruan biaya:")
-    for city, old_cost, new_cost, via in updates:
-        print(f"  {city}: {old_cost} menjadi {new_cost} melalui {via}")
-    return path, dist, expansions, explored
-
-
 def run_greedy(h_map, start="Surabaya", goal="Banyuwangi"):
     print_header("NOMOR 6: Greedy Best-First Search")
     frontier = [start]
@@ -292,7 +207,6 @@ def run_greedy(h_map, start="Surabaya", goal="Banyuwangi"):
 
     path, dist = reconstruct_path(parent, start, goal)
     print_summary(path, dist, expansions)
-    return path, dist, expansions, explored
 
 
 def run_astar(h_map, title="NOMOR 7: Algoritma A*", start="Surabaya", goal="Banyuwangi"):
@@ -354,49 +268,19 @@ def run_astar(h_map, title="NOMOR 7: Algoritma A*", start="Surabaya", goal="Bany
 
     path, dist = reconstruct_path(parent, start, goal)
     print_summary(path, dist, expansions)
-    return path, dist, expansions, explored
 
 
 if __name__ == "__main__":
-    run_nomor_1()
-    run_nomor_2()
-    hasil_bfs = run_bfs()
-    hasil_dfs = run_dfs()
-    hasil_ucs = run_ucs()
-    print("BFS menemukan jalur dengan jumlah ruas minimum, tetapi belum tentu jaraknya paling pendek.")
-    print(f"Jarak BFS: {hasil_bfs[1]} km; jarak minimum menurut UCS: {hasil_ucs[1]} km.")
-    print("DFS mengambil Mojokerto lebih dulu karena tetangga alfabet pertama diletakkan di atas stack.")
-    print(f"Jalur DFS yang ditemukan: {' -> '.join(hasil_dfs[0])} ({hasil_dfs[1]} km).")
-    hasil_greedy = run_greedy(default_h)
-    print("Greedy hanya melihat h(n), sehingga dapat memilih jalur yang tampak dekat tetapi jarak akhirnya lebih panjang.")
-    print(f"Jarak Greedy: {hasil_greedy[1]} km; jarak minimum menurut UCS: {hasil_ucs[1]} km.")
-    hasil_astar = run_astar(default_h, "NOMOR 7: Algoritma A* (Heuristik Standar)")
-    tidak_diperluas = sorted(set(hasil_ucs[3]) - set(hasil_astar[3]))
-    print("\nKota yang diperluas UCS tetapi tidak diperluas A*:", ", ".join(tidak_diperluas))
-    print("Kota-kota itu tidak diambil sebelum goal karena nilai f pada jalur menuju Banyuwangi lebih kecil.")
-    print("\nNOMOR 8: PERBANDINGAN")
-    print(f"{'Algoritma':<10} {'Jalur':<65} {'Jarak':>8} {'Ekspansi':>10} {'Optimal?'}")
-    hasil_semua = [
-        ("BFS", hasil_bfs), ("DFS", hasil_dfs), ("UCS", hasil_ucs),
-        ("Greedy", hasil_greedy), ("A*", hasil_astar)
-    ]
-    for nama, hasil in hasil_semua:
-        path, distance, expansions, _ = hasil
-        status = "Ya" if distance == hasil_ucs[1] else "Tidak"
-        print(f"{nama:<10} {' -> '.join(path):<65} {distance:>5} km {expansions:>10} {status}")
-    print("Rekomendasi: Saya memilih A* untuk rute ini karena hasilnya mencapai jarak minimum.")
-    print(f"A* memproses {hasil_astar[2]} kota, sedangkan UCS memproses {hasil_ucs[2]} kota.")
-    print("Heuristik standar pada data ini konsisten dan tidak melebihi jarak sebenarnya ke tujuan.")
-    print("Jika nilai heuristik tidak tersedia atau belum diperiksa, UCS tetap menjadi pilihan yang aman untuk mencari jarak minimum.")
+    run_bfs()
+    run_dfs()
+    run_ucs()
+    run_greedy(default_h)
+    run_astar(default_h, "NOMOR 7: Algoritma A* (Heuristik Standar)")
     h_9a = {city: 0 for city in default_h}
     run_astar(h_9a, "NOMOR 9a: Eksperimen A* dengan Semua h(n) = 0")
-    print_heuristic_check("Pemeriksaan NOMOR 9a", h_9a)
     h_9b = default_h.copy()
     h_9b["Lumajang"] = 300
     run_astar(h_9b, "NOMOR 9b: Eksperimen A* dengan h(Lumajang) = 300")
-    print_heuristic_check("Pemeriksaan NOMOR 9b", h_9b)
     h_9c = default_h.copy()
     h_9c["Jember"] = 0
     run_astar(h_9c, "NOMOR 9c: Eksperimen A* dengan h(Jember) = 0")
-    print_heuristic_check("Pemeriksaan NOMOR 9c", h_9c)
-
